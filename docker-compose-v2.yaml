@@ -1,0 +1,110 @@
+services:
+  mysql:
+    image: mysql:8.0.22
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - bettersuite-network
+    volumes:
+      - mysqlvol:/var/lib/mysql
+      - ./backup:/var/backup
+    environment:
+      MYSQL_ROOT_PASSWORD: defaultpassword
+
+  redis:
+    image: redis:8.2.0-alpine
+    networks:
+      - bettersuite-network
+    volumes:
+      - redisvol:/data
+
+  taxi-rider-api:
+    image: ghcr.io/lumeagency/taxi-rider-api:latest
+    restart: always
+    depends_on:
+      - "mysql"
+      - "redis"
+      - "taxi-admin-api"
+    volumes:
+      - ./img:/app/uploads
+      - ./config-new:/app/config
+    networks:
+      - bettersuite-network
+    env_file:
+      - ./ridy.env
+
+  taxi-driver-api:
+    image: ghcr.io/lumeagency/taxi-driver-api:latest
+    restart: always
+    depends_on:
+      - "mysql"
+      - "redis"
+      - "taxi-admin-api"
+    volumes:
+      - ./img:/app/uploads
+      - ./config-new:/app/config
+    networks:
+      - bettersuite-network
+    env_file:
+      - ./ridy.env
+
+  taxi-admin-api:
+    image: ghcr.io/lumeagency/taxi-admin-api:latest
+    restart: always
+    depends_on:
+      - "mysql"
+      - "redis"
+    networks:
+      - bettersuite-network
+    volumes:
+      - ./img:/app/uploads
+      - ./config-new:/app/config
+    env_file:
+      - ./ridy.env
+    environment:
+      - FORCE_SYNC_DB=true
+
+  taxi-admin-panel:
+    image: ghcr.io/lumeagency/taxi-legacy-admin-panel:5.3.2
+    restart: always
+    networks:
+      - bettersuite-network
+    volumes:
+      - taxiassets:/usr/share/nginx/html/assets
+
+  payment-gateways:
+    image: ghcr.io/lumeagency/service-payment:latest
+    depends_on:
+      - "taxi-rider-api"
+    networks:
+      - bettersuite-network
+    env_file:
+      - ./ridy.env
+
+  nginx:
+    image: nginx
+    depends_on:
+      - "payment-gateways"
+      - "taxi-rider-api"
+      - "taxi-driver-api"
+      - "taxi-admin-panel"
+      - "taxi-admin-api"
+    volumes:
+      - ./templates:/etc/nginx/templates
+      - ./certbot:/etc/letsencrypt
+      - ./img:/app/uploads
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NGINX_HOST=_
+    networks:
+      - bettersuite-network
+
+volumes:
+  redisvol:
+  mysqlvol:
+  taxiassets:
+
+
+networks:
+  bettersuite-network:
