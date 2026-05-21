@@ -75,12 +75,12 @@ install_bettersuite() {
 
     chmod 777 ./templates
 
-    wget -qO- https://github.com/peritonprint/biperapp/blob/main/default.conf.template > ./templates/default.conf.template
+    wget -qO- https://raw.githubusercontent.com/peritonprint/biperapp/blob/main/default.conf.template > ./templates/default.conf.template
 
     # Installation
-    wget -qO- https://github.com/peritonprint/biperapp/blob/main/docker-compose-v2.yaml > docker-compose.yaml
+    wget -qO- https://raw.githubusercontent.com/peritonprint/biperapp/blob/main/docker-compose-v2.yaml > docker-compose.yaml
 
-    wget -qO- https://github.com/peritonprint/biperapp/blob/main/ridy.env > ridy.env
+    wget -qO- https://raw.githubusercontent.com/peritonprint/biperapp/blob/main/ridy.env > ridy.env
 
     # replace all x.x.x.x with the actual IP
     sed -i "s/x.x.x.x/$advertise_addr/g" ridy.env
